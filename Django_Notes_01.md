@@ -354,6 +354,7 @@ from django.http import HttpResponse
 class HomeView(View):
     def get(self, request):
         return HttpResponse("This is a Class-Based View")
+```
 
 ## 🔥 Most Common Response Types
 
