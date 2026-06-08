@@ -626,6 +626,7 @@ class ProductProxy(Product):
 | **Multi-Table Inheritance** | ✔ Both tables  | Parent-child data required |
 | **Proxy Model**             | ❌ New table    | Only behavior change       |
 
+```
 
 # 🔔 Django Signals
 
@@ -650,7 +651,7 @@ from .models import Product
 @receiver(post_save, sender=Product)
 def after_product_save(sender, instance, **kwargs):
     print(f"Product saved: {instance.name}")
-
+```
 ## 🔥 Most Important Built-in Signals
 
 | Signal Name        | Event                                 |
