@@ -741,6 +741,7 @@ def product_list(request):
     <li>No products available</li>
 {% endfor %}
 </ul>
+```
 
 # 🧩 Django Migrations
 
