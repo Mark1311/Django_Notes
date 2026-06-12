@@ -1,11 +1,8 @@
 # Django Interview Answers — settings.py, manage.py, INSTALLED_APPS
 
----
-
 ## ✅ settings.py ka Role Kya Hai?
 
-**settings.py** Django project ka **main configuration file** hota hai.  
-Isme project ki saari global settings defined hoti hain.
+**settings.py** Django project ka **main configuration file** hota hai. Isme project ki saari global settings defined hoti hain.
 
 Ye file decide karti hai ki project ka behavior kaisa hoga.
 
@@ -32,11 +29,11 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+```
 
+# What is manage.py – Django Me Kya Karta Hai?
 
-# manage.py – Django Me Kya Karta Hai?
-
-## ✅ manage.py Kya Hai?
+### ✅ manage.py Kya Hai?
 
 **manage.py** Django project ka command-line utility file hota hai  
 jo project ko **run aur manage** karne ke liye use hota hai.
@@ -45,7 +42,7 @@ Ye file Django ke built-in commands ko project ke context me execute karti hai.
 
 ---
 
-## ✅ manage.py Ka Main Kaam
+### ✅ manage.py Ka Main Kaam
 
 - Django settings load karta hai
 - Project environment setup karta hai
@@ -266,7 +263,19 @@ class Book(models.Model):
     title = models.CharField(max_length=100)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
 
+- अब एक Author से उसकी books access करनी हों:
+
+author = Author.objects.get(id=1)
+author.book_set.all()
+
+- Django by default reverse relation का नाम:
+book_set होता है (model name + _set)
+
+
 ### ✅ related_name Use Karne Ke Baad
+
+### ### ForeignKey Example:- 
+
 ```python
 class Book(models.Model):
     title = models.CharField(max_length=100)
@@ -275,6 +284,36 @@ class Book(models.Model):
         on_delete=models.CASCADE,
         related_name="books"
     )
+
+author = Author.objects.get(id=1)
+author.books.all()
+
+-- यह book_set की जगह ज्यादा readable है।
+
+### OneToOne Example:- 
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile"
+    )
+
+user.profile
+
+### ManyToMany Example:-
+
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+
+class Course(models.Model):
+    students = models.ManyToManyField(
+        Student,
+        related_name="courses"
+    )
+
+student.courses.all()
+
 ```
 
 # Django – `null` vs `blank` Difference
@@ -296,7 +335,7 @@ lekin dono **different layer** par kaam karte hain.
 price = models.IntegerField(null=True)
 ```
 
-## ✅ blank Kya Hota Hai?
+## ✅ `blank` Kya Hota Hai?
 
 - blank form/validation level par kaam karta hai
 - Decide karta hai ki field form me required hai ya optional
@@ -305,6 +344,21 @@ price = models.IntegerField(null=True)
 ```python
     name = models.CharField(max_length=100, blank=True)
 ```
+
+| Feature            | `null=True`                                      | `blank=True`                          |
+| ------------------ | ------------------------------------------------ | ------------------------------------- |
+| Level              | Database Level                                   | Form/Validation Level                 |
+| Purpose            | Database में `NULL` store करने की अनुमति देता है | Field को optional बनाता है            |
+| Affects            | Database Schema                                  | Django Forms, Admin, Model Validation |
+| Empty Value        | `NULL`                                           | Empty String (`""`) या empty input    |
+| Form Required?     | Required रह सकती है                              | Required नहीं रहती                    |
+| Database Required? | NULL allowed                                     | Database constraint नहीं बदलता        |
+| Default Value      | `False`                                          | `False`                               |
+| Used In            | Models                                           | Models (Form validation के लिए)       |
+| Admin Panel        | Direct effect नहीं                               | Field optional दिखाई देती है          |
+| Interview Keyword  | **Database**                                     | **Validation/Form**                   |
+
+
 
 # Django Model Me Meta Class Ka Use Kya Hai?
 
@@ -359,87 +413,7 @@ class Meta:
     ]
 ```
 
-
-# Django `on_delete` Options – Kya Kya Hote Hain?
-
-## ✅ on_delete Kya Hota Hai?
-
-`on_delete` Django me **ForeignKey** aur **OneToOneField** ke saath use hota hai.  
-Ye decide karta hai ki **jab parent object delete hota hai to related child records ka kya behavior hoga**.
-
-Simple words me:
-
-> on_delete = parent delete hone par child data ka rule
-
----
-
-## ✅ Example Base Models
-
-```python
-class Author(models.Model):
-    name = models.CharField(max_length=100)
-
-class Book(models.Model):
-    title = models.CharField(max_length=100)
-    author = models.ForeignKey(
-        Author,
-        on_delete=models.CASCADE
-    )
-```
-
-#### ✅ All Important on_delete Options
-
-### 🔹 1️⃣ CASCADE (Most Common)
-- Parent delete → saare related child records bhi delete
-
-```python
-author = models.ForeignKey(Author, on_delete=models.CASCADE)
-```
-
-### 🔹 2️⃣ PROTECT
-* Parent delete block ho jayega agar child records exist karte hain
-```python
-author = models.ForeignKey(Author, on_delete=models.PROTECT)
-```
-
-### 🔹 3️⃣ SET_NULL
-* Parent delete → child FK field NULL set ho jayegi
-```python
-author = models.ForeignKey(
-    Author,
-    null=True,
-    on_delete=models.SET_NULL
-)
-```
-
-### 🔹 4️⃣ SET_DEFAULT
-* Parent delete → FK field default value se set ho jayegi
-```python
-author = models.ForeignKey(
-    Author,
-    default=1,
-    on_delete=models.SET_DEFAULT
-)
-```
-
-### 🔹 6️⃣ DO_NOTHING
-* Parent delete → Django kuch nahi karega
-```python
-author = models.ForeignKey(Author, on_delete=models.DO_NOTHING)
-```
-
-| Option      | Behavior                     |
-| ----------- | ---------------------------- |
-| CASCADE     | Parent delete → child delete |
-| PROTECT     | Parent delete blocked        |
-| SET_NULL    | FK = NULL                    |
-| SET_DEFAULT | FK = default value           |
-| SET(func)   | FK = function result         |
-| DO_NOTHING  | No action (risky)            |
-
-
-# 
-Django ORM – `select_related` vs `prefetch_related`
+# Django ORM – `select_related` vs `prefetch_related`
 
 Ye dono Django ORM ke **query optimization tools** hain  
 jo related data ko efficiently fetch karne ke liye use hote hain.
@@ -448,16 +422,6 @@ Main purpose:
 
 > N+1 query problem ko solve karna & DB queries kam karna
 
----
-
-# ✅ Problem Pehle Samjho (N+1 Query Problem)
-
-```python
-books = Book.objects.all()
-
-for b in books:
-    print(b.author.name)
-```
 ### ✅ select_related Kya Hota Hai?
 
 * SQL JOIN use karta hai
@@ -499,6 +463,19 @@ for a in authors:
 
 * Single object relation → select_related
 * Multiple object relation → prefetch_related
+
+| Feature          | `select_related()`                          | `prefetch_related()`                         |
+| ---------------- | ------------------------------------------- | -------------------------------------------- |
+| Purpose          | Related object को SQL JOIN से fetch करता है | Related object को अलग query से fetch करता है |
+| Queries          | Usually 1 Query                             | 2 या अधिक Queries                            |
+| Works With       | `ForeignKey`, `OneToOneField`               | `ManyToManyField`, Reverse FK, FK, O2O       |
+| SQL JOIN         | ✅ Yes                                       | ❌ No                                         |
+| Data Fetch       | Single query में                            | Multiple queries में                         |
+| Performance      | FK/O2O के लिए बेहतर                         | M2M/Reverse Relations के लिए बेहतर           |
+| Memory Usage     | कम                                          | थोड़ा ज्यादा                                 |
+| Reverse Relation | ❌ Support नहीं                              | ✅ Support                                    |
+| ManyToMany       | ❌ Support नहीं                              | ✅ Support                                    |
+| Use Case         | Author के साथ Book                          | Book के साथ Tags                             |
 
 
 
@@ -546,18 +523,20 @@ products = Product.objects.filter(
 )
 ```
 
+`Q Object Django ORM में complex database queries बनाने के लिए उपयोग किया जाता है। यह OR (|), AND (&) और NOT (~) operations को support करता है, जिससे dynamic और advanced filtering की जा सकती है।
+`
+
 
 # Django ORM – F Expressions Kya Hoti Hain?
 
 ## ✅ Definition (Short)
 
-**F expressions** Django me database field ki value ko  
-**direct database level par reference aur update** karne ke liye use hoti hain —  
+**F expressions** Django me database field ki value ko **direct database level par reference aur update** karne ke liye use hoti hain. 
 bina data ko Python me laaye.
 
-Simple line:
+`F() Expression का इस्तेमाल database field की current value पर operation करने के लिए किया जाता है, बिना data को Python में लाए।`
 
-> F expression = field vs field operation at DB level
+`F() Expression Django ORM में database field की existing value को reference करने के लिए उपयोग की जाती है। यह calculations और updates को database level पर perform करती है, जिससे performance बेहतर होती है और race conditions से बचा जा सकता है।`
 
 ---
 
@@ -575,13 +554,20 @@ Simple line:
 
 ### ❌ Normal Way (2 steps, unsafe)
 
+> Python में data लाकर
+
 ```python
 p = Product.objects.get(id=1)
 p.stock = p.stock + 1
 p.save()
+
+- Data DB से fetch हुआ
+- Python में increment हुआ
+- फिर DB में save हुआ
 ```
 
 ### ✅ F Expression Way (Single DB query)
+> without Python में data लाकर increment करने की बजाय सीधे DB में ही increment कर दिया
 ```python
 from django.db.models import F
 
@@ -767,93 +753,87 @@ Product.objects.bulk_create(products)
 # Django QuerySet – order_by() ka Use
 
 ## order_by() kya hota hai?
+
 `order_by()` Django ORM ka method hai jo database se aane wale records ko **sorting (order)** me arrange karta hai.
 
 Iska use QuerySet ke results ko:
 - Ascending order (A → Z, 1 → 9)
 - Descending order (Z → A, 9 → 1)
-me lane ke liye hota hai.
 
 ---
 
 ## Basic Syntax
-
+```python
 Model.objects.all().order_by('field_name')
-
+```
 ---
 
 ## Example Model
-
+```python
 class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.IntegerField()
     created_at = models.DateTimeField()
-
+```
 ---
 
 ## Ascending Order (Default)
 
-# Price low se high
+> Price low se high
+```python
 products = Product.objects.all().order_by('price')
-
-✔ By default ascending order hota hai.
+```
+> ✔ By default ascending order hota hai.
 
 ---
 
 ## Descending Order
 
-# Price high se low
+>  Price high se low
+```python
 products = Product.objects.all().order_by('-price')
-
-✔ Minus (-) lagane se descending order ho jata hai.
+```
+> ✔ Minus (-) lagane se descending order ho jata hai.
 
 ---
 
 ## Multiple Fields Order
-
+```python
 products = Product.objects.all().order_by('price', 'name')
-
-Matlab:
+```
 1️⃣ Pehle price ke basis par sort  
 2️⃣ Same price wale records → name ke basis par sort
 
 ---
 
 ## Reverse Current Order
-
+```python
 products = Product.objects.all().order_by('price').reverse()
 
+# Kyunki order_by('price') se data lowest-to-highest ho gaya tha, .reverse() lagane ke baad wo Highest-to-Lowest (sabse mehenga product pehle, phir usse sasta) ho jayega.
+
+```
 ---
 
 ## Random Order
-
+```python
 from django.db.models.functions import Random
 
 products = Product.objects.order_by('?')
-
+```
 ⚠ Ye heavy ho sakta hai large tables me — production me avoid karo.
 
----
+Django me order_by() ke andar jab aap '?' paas karte hain, toh Django database ko bolta hai ki data ko randomly arrange kare.
 
-## Important Notes
-
-- order_by() har call par previous ordering replace kar deta hai
-- Chain kar sakte ho filters ke saath
-
-Example:
-Product.objects.filter(price__gt=100).order_by('-created_at')
-
----
-
-## Interview Point
-
-order_by() = SQL ke ORDER BY clause ka Django ORM version.
+SQL me ye background me kuch aisa chalta hai: SELECT * FROM product ORDER BY RANDOM(); (ya RAND() database ke hisab se).
 
 
-# Django QuerySet – exclude() ka Use
+# Django – exclude() ka Use
 
-## exclude() kya karta hai?
 `exclude()` Django ORM ka method hai jo QuerySet se **un records ko hata deta hai** jo given condition match karte hain.
+
+exclude() removes records that match the given condition from the QuerySet.
+
 
 Matlab:
 filter() = jo match kare → include karo  
@@ -862,34 +842,36 @@ exclude() = jo match kare → remove karo
 ---
 
 ## Basic Syntax
-
+```python
 Model.objects.exclude(field=value)
-
+```
 ---
 
-## Important Example
+### Important Example
 
-# Price 100 wale products ko hata do
+## Price 100 wale products ko hata do
+```python
 products = Product.objects.exclude(price=100)
-
+```
+```sql
 SQL jaisa:
 SELECT * FROM product WHERE price != 100
-
+```
 ---
 
 ## Multiple Conditions
-
+```python
 products = Product.objects.exclude(price=100, is_active=False)
-
+```
 ✔ Dono conditions match karne wale records exclude honge
 
 ---
 
 ## filter + exclude Together
-
+```python
 products = Product.objects.filter(is_active=True).exclude(price__lt=50)
-
-✔ Pehle active records lo  
+```
+✔ Pehle active records lo (Phale Filter krega fir exclude krega)
 ✔ Fir price < 50 wale hata do
 
 ---
@@ -903,37 +885,31 @@ products = Product.objects.filter(is_active=True).exclude(price__lt=50)
 
 ---
 
-## Interview Line
+# Django QuerySet – Lazy Hone Ka Matlab (QuerySet lazy hota hai)
 
-exclude() removes records that match the given condition from the QuerySet.
+Django me QuerySet **lazy (der se execute hone wala)** hota hai. Matlab jab tum QuerySet likhte ho tab database query turant run nahi hoti.
 
+Django me "QuerySet is lazy" ka matlab hota hai "Alsi (Lazy)"—yani jab tak bilkul zaroorat nahi padti, Django database se data nahi nikalta.
 
-# Django QuerySet – Lazy Hone Ka Matlab
-
-## QuerySet lazy hota hai — iska kya meaning hai?
-
-Django me QuerySet **lazy (der se execute hone wala)** hota hai.  
-Matlab jab tum QuerySet likhte ho tab database query turant run nahi hoti.
-
-Query tab execute hoti hai jab:
-👉 Data actually chahiye hota hai  
-👉 QuerySet evaluate hota hai
+Aap Django me jitni marzi queries likh lo, filter laga lo, order badal lo, Django database ke paas tab tak nahi jayega jab tak aap us data ko sach me use (jaise print karna, loop chalana) nahi karte.
 
 ---
 
 ## Example
+```python
+# Line 1: Sirf query ban rahi hai, database me KUCh NHI HUA.
+q1 = Product.objects.all()
 
-qs = Product.objects.filter(price__gt=100)
+# Line 2: Query me filter jud gaya, abhi bhi database me KUCH NHI HUA.
+q2 = q1.filter(category="Electronics")
 
-Yaha par:
-❌ Database hit nahi hoti abhi  
-✔ Sirf query build hoti hai
+# Line 3: Sorting jud gayi, abhi bhi database untouched hai.
+q3 = q2.order_by('-price')
 
----
+### Agar aap upar di gayi 3 lines ko execute karenge, toh database par 0 (shunya) load padega. Django ne sirf ek SQL query taiyar ki hai, usko database par chalaya (hit) nahi hai.
+```
 
 ## Query Kab Execute Hoti Hai?
-
-Query run hoti hai jab tum:
 
 - loop chalao
   for p in qs:
@@ -941,6 +917,7 @@ Query run hoti hai jab tum:
 
 - list() me convert karo
   data = list(qs)
+  print(data)
 
 - slicing karo
   qs[:5]
@@ -964,7 +941,9 @@ Query run hoti hai jab tum:
 ## Important Note
 
 QuerySet chain hota rahega:
+```python
 qs = Product.objects.filter(active=True).exclude(price=0).order_by('name')
+```
 
 ✔ Still DB hit nahi hogi  
 ✔ Final evaluation par hi query run hogi
@@ -973,7 +952,7 @@ qs = Product.objects.filter(active=True).exclude(price=0).order_by('name')
 
 ## Interview Line
 
-Django QuerySets are lazy — they don’t hit the database until the data is actually needed.
+Django QuerySets are lazy — they don’t hit the database until the data is actually needed ya data ko print nhi kroge.
 
 
 # Django – N+1 Query Problem
@@ -994,14 +973,14 @@ Ye performance issue create karta hai.
 ## Simple Example
 
 models:
-
+```python
 class Author(models.Model):
     name = models.CharField(max_length=100)
 
 class Book(models.Model):
     title = models.CharField(max_length=100)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
-
+```
 ---
 
 ## Problem Case
@@ -1020,18 +999,18 @@ Agar 50 books hain → total 51 queries ❌
 ---
 
 ## Solution – select_related()
-
+```python
 books = Book.objects.select_related('author')
-
+```
 ✔ Join laga kar related data ek hi query me le aata hai  
 ✔ ForeignKey / OneToOne ke liye best
 
 ---
 
 ## ManyToMany / Reverse FK Case – prefetch_related()
-
+```python
 books = Book.objects.prefetch_related('tags')
-
+```
 ✔ Separate query chalata hai but optimized batching ke saath  
 ✔ ManyToMany / reverse relations ke liye use hota hai
 
@@ -1047,11 +1026,6 @@ books = Book.objects.prefetch_related('tags')
 
 ---
 
-## Interview Line
-
-N+1 problem happens when one query fetches main objects and additional queries are executed for each related object.
-
-
 # Django – Function Based View (FBV) vs Class Based View (CBV)
 
 ## Function Based View (FBV)
@@ -1059,9 +1033,10 @@ N+1 problem happens when one query fetches main objects and additional queries a
 Function Based View ek simple Python function hoti hai jo request leti hai aur response return karti hai.
 
 ### Structure
+```python
 def my_view(request):
     return HttpResponse("Hello")
-
+```
 ### Features
 - Simple aur easy to understand
 - Beginners ke liye best
@@ -1081,9 +1056,11 @@ def my_view(request):
 Class Based View ek Python class hoti hai jisme methods (get, post, etc.) define hote hain request handle karne ke liye.
 
 ### Structure
+```python
 class MyView(View):
     def get(self, request):
         return HttpResponse("Hello")
+```
 
 ### Features
 - Object Oriented approach
@@ -1173,11 +1150,6 @@ Speed | Faster | Thoda slower |
 
 ---
 
-## Interview Line
-
-render() directly template return karta hai, jabki redirect() browser ko new URL par bhejta hai with a new request.
-
-
 # Django – request Object Me Kya Kya Hota Hai?
 
 ## request object kya hota hai?
@@ -1200,9 +1172,6 @@ Isme client (browser) se aayi hui saari information hoti hai:
 
 ### request.method
 Batata hai request type kya hai
-
-request.method  
-# "GET", "POST", etc.
 
 ---
 
@@ -1263,7 +1232,7 @@ request.COOKIES.get("theme")
 Current URL path
 
 request.path  
-# /products/list/
+/products/list/
 
 ---
 
@@ -1295,9 +1264,7 @@ request.body
 Django request object contains all client request data like method, GET/POST data, user, files, headers, session, and cookies.
 
 
-# Django – JsonResponse Kab Use Karte Hain?
-
-## JsonResponse kya hota hai?
+# Django – JsonResponse Kab Use Karte Hain (JsonResponse kya hota hai)?
 
 `JsonResponse` Django ka special response class hai jo data ko **JSON format** me browser/client ko return karta hai.
 
@@ -1322,7 +1289,7 @@ REST type responses
 ---
 
 ## Important Example
-
+```python
 from django.http import JsonResponse
 
 def data_view(request):
@@ -1331,7 +1298,7 @@ def data_view(request):
         "marks": 90
     }
     return JsonResponse(data)
-
+```
 Response:
 {
   "name": "Bittu",
@@ -1365,11 +1332,6 @@ JsonResponse → JSON data return
 - DRF ke bina bhi basic API bana sakte ho
 
 ---
-
-## Interview Line
-
-JsonResponse is used when we want to return data in JSON format instead of rendering an HTML template.
-
 
 # Django – request.GET vs request.POST Difference
 
@@ -1452,9 +1414,3 @@ Use Case | Search, filter | Form submit, save data |
 ## Interview Line
 
 request.GET reads data from URL query parameters, while request.POST reads data sent in the request body via POST method.
-
-
-
-```python
-
-```

@@ -151,7 +151,7 @@ def home(request):
 ### 🔸 Template Inheritance
 
 {% extends "base.html" %}
-
+```
 
 ### ✅ Template Engine Use Kyu Karte Hain?
 
@@ -160,62 +160,6 @@ def home(request):
 * Code separation (logic vs UI)
 * Reusable layouts banane ke liye
 * Clean & maintainable code
-
-# Django Migration vs Migrate – Difference & Usage
-
-## ✅ Migration Kya Hoti Hai?
-
-**Migration** ek file/set of files hoti hain jo database structure me hone wale changes ko describe karti hain.
-
-Jab tum models.py me change karte ho (new field, table, etc.), to Django us change ko migration file me convert karta hai.
-
-Ye files `migrations/` folder ke andar banti hain.
-
-### 🔹 Migration Create Karne Ka Command
-
-```bash
-python manage.py makemigrations
-```
-
-* Models check karti hai
-* Changes detect karti hai
-* Migration file generate karti hai
-* Database me abhi kuch change nahi hota
-
-## ✅ Migrate Kya Hota Hai?
-
-**Migrate** command database me migration files ke changes ko actually apply karta hai.
-
-Ye database tables create/update/delete karta hai.
-
-### 🔹 Migrate Command
-
-```bash
-python manage.py migrate
-```
-
-* Migration files read karti hai
-* Database schema update karti hai
-* Tables create/alter karti hai
-
-## ✅ Simple Flow
-
-models.py change
-   ↓
-makemigrations  → migration file create
-   ↓
-migrate         → database update
-
-# ✅ Key Difference Table
-
-| Point         | Migration                 | Migrate                  |
-| ------------- | ------------------------- | ------------------------ |
-| Meaning       | Change description file   | Command to apply changes |
-| Kya karta hai | Migration file banata hai | DB update karta hai      |
-| Command       | makemigrations            | migrate                  |
-| DB change     | ❌ Nahi                    | ✅ Haan                   |
-| Kab use       | Model change ke baad      | Migration banne ke baad  |
-
 
 # Django Model → Field → Save Data → Search/Fetch Data – Full Flow Example
 
@@ -370,7 +314,7 @@ result = Product.objects.filter(
     price__gt=40000,
     stock__gt=3
 ).order_by("-created_at")
-
+```
 
 
 #### Interview Samajhne Wala Summary
@@ -397,13 +341,9 @@ Hum ek Product model banayenge aur different ways me data template tak bhejenge:
 - Context shortcut (locals)
 - Class Based View method
 
-Sab ek hi flow me 👇
-
 ---
 
-## ================================
 ## FULL CODE FLOW (Model → View → URL → Template)
-## ================================
 
 ```python
 # =========================================
@@ -492,6 +432,9 @@ def product_dashboard_locals(request):
     mobiles = Product.objects.filter(category="mobile")
     return render(request, "products/dashboard.html", locals())
 
+`यहाँ locals() function current scope के सारे local variables को dictionary में convert कर देता है।`
+`locals() current function के सभी local variables को dictionary के रूप में return करता है और उसे context की तरह render() में pass किया जा सकता है। हालांकि Django projects में explicit context dictionary use करना बेहतर माना जाता है क्योंकि वह अधिक readable और maintainable होता है।`
+
 
 
 # =========================================
@@ -562,7 +505,7 @@ Average Price: {{ stats.avg_price }}
   <p>{{ item.name }} - {{ item.price }}</p>
 {% endfor %}
 """
-
+```
 
 ### ✅ Backend → Template Data Send Karne Ke Methods
 
@@ -599,9 +542,7 @@ Sab ek hi project-style flow me 👇
 
 ---
 
-## =====================================
 ## FULL END-TO-END CODE FLOW
-## =====================================
 
 ```python
 # =====================================
@@ -808,7 +749,7 @@ function sendAjax(){
   {% endfor %}
 {% endif %}
 """
-
+```
 
 ### ✅ Frontend → Backend Data Send Methods Summary
 
@@ -919,10 +860,11 @@ authors = Author.objects.annotate(
     book_count=Count("book"),
     avg_price=Avg("book__price")
 )
+```
 
-# Django ORM `annotate()` – Deep Detail Explanation (Interview Ready)
+## Django ORM `annotate()` – Deep Detail Explanation (Interview Ready)
 
-## ✅ Simple Definition
+### ✅ Simple Definition
 
 `annotate()` Django ORM ka method hai jo **har record ke saath ek extra calculated field add karta hai** — ye calculation usually aggregation (Count, Sum, Avg, Max, Min) se hoti hai.
 
@@ -933,7 +875,7 @@ jo normally model me store nahi hoti, balki **calculate hoti hai**.
 
 ---
 
-## ✅ Real Meaning (Easy Language)
+### ✅ Real Meaning (Easy Language)
 
 Soch:
 
@@ -948,8 +890,84 @@ Ye sab **per-row calculation** hai → ye kaam `annotate()` karta hai.
 
 ---
 
+# Idempotency kya hoti hai?
 
+Idempotency ka matlab hai ki agar aap ek hi request ko database ya server par baar-baar (multiple times) bhejte hain, to uska nateeja (side-effect) hamesha wahi rahega jo pehli baar me tha. Server ki state par koi extra farq nahi padega.
 
-```python
+> In short: 1 Request = Same Result. 100 Same Requests = Still Same Result.
 
-```
+### Real-World Example: Payment Gateway:-
+Maan lo aap ek E-commerce website par kapde khareed rahe hain. Aapne "Pay Now" button par click kiya.
+
+- Aapka internet slow tha, to aapne gusse me ya galti se "Pay Now" button par 3 baar click kar diya.
+- Agar API Idempotent NAHI hai: Aapke bank account se 3 baar paise kat jayenge (Kyunki server ne har click ko ek naya order mana).
+- Agar API Idempotent HAI: Pehli request par paisa katega, aur baaki ki 2 requests ko server pehchan lega ki yeh wahi purani request hai, aur unhein bina paise kaate skip kar dega (ya purana hi response return kar dega).
+
+### Backend Me Isko Implement Kaise Karte Hain? (System Design Perspective)
+Interviewer poochega: "Agar POST idempotent nahi hai, to aap Payment API ko idempotent kaise banayenge?"
+
+- Frontend ek Unique Key banata hai: Jab bhi frontend koi sensitive request (jaise payment) bhejta hai, to wo request ke header me ek unique random string bhejta hai, jise Idempotency-Key (ya UUID) kehte hain.
+- Backend check karta hai: Backend (Django/Node) me request aate hi, hum sabse pehle us Key ko Redis (ya cache database) me check karte hain.
+- Pehli baar Request aayi: Key database me nahi milti. Hum request process karte hain, payment karte hain, aur us Key ko response ke sath Redis me save kar dete hain (expiry time ke sath, jaise 5 mins).
+- Dubara Request aayi (Duplicate): Agar user ne phir se click kiya, to backend dekhta hai ki yeh Idempotency-Key to pehle se Redis me maujood hai! Backend bina database ya payment gateway ko hit kiye, purana wala response hi turant wapas bhej deta hai.
+
+### HTTP Methods Aur Idempotency:-
+
+| HTTP Method | Idempotent? | Technical Description & Reason | Real-world Analogy / Example |
+| :--- | :---: | :--- | :--- |
+| **GET** | **YES** | Used only to fetch data. It does not alter the server state or database records. Making 1 or 100 requests returns the same resource status without side-effects. | Viewing a product page on Amazon. Refreshing the page 10 times doesn't change the price or stock. |
+| **PUT** | **YES** | Used to update/replace an entire resource. If you send the same payload multiple times, the resource is updated to that exact state every time. Server state stays identical after the first call. | Setting your profile age to `25`. Updating it to `25` multiple times leaves your age at `25`. |
+| **DELETE** | **YES** | Used to remove a resource. The first request deletes the item (State changes: Active -> Deleted). Subsequent identical requests find nothing to delete, returning `404 Not Found`, but the system state doesn't change further. | Erasing a specific whiteboard entry. Scraping an already empty spot 5 more times does nothing new. |
+| **POST** | **NO** | Used to create a new resource. Every distinct request creates a brand new record in the database. Multiple identical requests result in multiple duplicate entries. | Clicking the 'Submit Order' or 'Pay Now' button multiple times, creating multiple separate charges or orders. |
+| **PATCH** | **NO / DEPENDS** | Used for partial updates. It *can* be idempotent, but isn't by default. For example, if the patch operation is incremental (`"age": "age + 1"`), repeating it changes the state each time. | Toggling a status or incrementing a counter. Each click adds to the previous value. |
+| **HEAD** | **YES** | Identical to GET, but it only retrieves the response headers (meta-information) without the response body. Safe and has no side effects. | Checking the last-modified date of a file without downloading the file itself. |
+| **OPTIONS** | **YES** | Used to describe the communication options (like allowed HTTP methods or CORS configurations) for the target resource. Read-only and safe. | Pre-flight request sent by browsers to verify server permissions before sending actual data. |
+
+# Django me WSGI aur ASGI kya ha or inke beech kya farq hai? Aap ASGI and WSGI ka use kab karenge?
+Django me WSGI aur ASGI dono hi Web Servers aur aapke Django application ke beech ka "medium" (ya interface) hain. Jab koi user aapki website par aata hai, to server tak request aati hai, aur yeh interfaces us request ko Django code tak pahunchate hain.
+
+### 1. WSGI Kya Hai? (Web Server Gateway Interface)
+
+- Yeh kaise kaam karta hai? Yeh "One Request per Thread" ke rule par kaam karta hai. Matlab agar ek request aayi, to ek thread usko handle karega. Jab tak wo request poori nahi hoti (jaise database se data aana), tab tak wo thread busy rahega aur doosri request nahi le sakta.
+
+- Kab use karein? Agar aap ek normal web application bana rahe hain (jaise blog, e-commerce, ya CMS) jahan sirf standard HTTP requests (GET, POST) aati hain aur data turant load ho jata hai.
+
+### 2. ASGI Kya Hai? (Asynchronous Server Gateway Interface)
+
+- Yeh kaise kaam karta hai? Yeh ek sath multiple requests ko bina kisi thread ko block kiye handle kar sakta hai. Agar ek request database ka wait kar rahi hai, to server us waqt doosri request ko process karne lag jata hai. Yeh sirf HTTP hi nahi, balki WebSockets aur Chat protocols ko bhi support karta hai.
+
+- Kab use karein? Agar aapko real-time features banane hain—jaise Chat Applications, Live Notifications, Real-time Dashboards, ya WebSockets ka use karna ho.
+
+### Aapko kab kaun sa use karna chahiye?
+
+> WSGI ka use kab karein:
+- Standard CRUD Applications: Agar aapka project ek basic CRUD application hai jahan user data mangta hai aur aap respond karte hain.
+- No Real-time Requirement: Jab aapko long-polling ya continuous server connection (WebSockets) ki zaroorat nahi hai.
+- Legacy Projects: Agar aap kisi purane Django project (Django 2.x ya usse pehle) par kaam kar rahe hain.
+
+> ASGI ka use kab karein:
+- Real-time Applications: Agar aap Django Channels ka use karke ek Chat App ya Live Delivery Tracking System bana rahe hain.
+- Long-running Connections: Jab frontend aur backend ke beech continuous connection chahiye (jaise Stock Market live charts).
+- High Concurrency: Jab aap chahte hain ki kam resources (RAM/CPU) me aapka server ek sath hazaron requests handle kar sake bina crash hue.
+
+### WSGI vs ASGI: Mukhyo Farq
+
+| Feature | WSGI | ASGI |
+| :--- | :--- | :--- |
+| **Full Form** | Web Server Gateway Interface | Asynchronous Server Gateway Interface |
+| **Nature** | **Synchronous** (Ek baar me ek kaam line se) | **Asynchronous** (Ek sath kai kaam bina block kiye) |
+| **Protocols** | Sirf **HTTP** ko support karta hai. | **HTTP + WebSockets** dono ko support karta hai. |
+| **Speed / Performance** | Heavy traffic aur long-running requests me slow ho sakta hai. | Bohot fast hai, khaaskar jab real-time data transfer ho raha ho. |
+| **Default Servers** | Gunicorn, uWSGI | Daphne, Uvicorn |
+
+---
+
+## Technical Context for Interviews
+
+### WSGI (Synchronous Architecture)
+* **How it works:** It follows a **one-request-per-thread** model. If a request is waiting for a database query or a third-party API response, the entire thread remains blocked.
+* **Best used for:** Standard CRUD operations, traditional e-commerce platforms, blogs, and content management systems.
+
+### ASGI (Asynchronous Architecture)
+* **How it works:** Built as a successor to WSGI, it handles multiple requests concurrently using an event loop (asyncio). It can pause a request while waiting for background I/O operations and process other incoming requests in the meantime.
+* **Best used for:** Real-time chat applications, live notifications, video streaming platforms, or any application requiring persistent WebSocket connections.

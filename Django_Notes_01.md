@@ -128,7 +128,7 @@ Django **MVC architecture ke ek variant** par kaam karta hai jise hum **MVT (Mod
                  │      HTTP Response      │
                  │      back to User       │
                  └────────────────────────┘
-
+```
 Django MVT architecture me URL request View ko trigger karti hai, View Model se data retrieve karta hai, aur Template HTML generate karke user ko response deta hai.
 
 # 🧩 MVC Architecture (Model - View - Template)
@@ -190,7 +190,7 @@ def product_list(request):
 ```
 
 
-### ✔ 3️⃣ Template — Presentation / UI Layer
+## ✔ 3️⃣ Template — Presentation / UI Layer
 
 **Templates final output user ko show karte hain. Mostly HTML + CSS + JS.**
 
@@ -296,7 +296,50 @@ class Fee(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     amount = models.IntegerField()
 
+```
+
 # Agar Student delete hoga → Fee bhi delete ho jayega (because CASCADE).
+
+
+#### ✅ All Important on_delete Options
+
+### 🔹 1️⃣ CASCADE (Most Common)
+- Parent delete → saare related child records bhi delete
+
+```python
+author = models.ForeignKey(Author, on_delete=models.CASCADE)
+```
+
+### 🔹 2️⃣ PROTECT
+* Parent delete block ho jayega agar child records exist karte hain
+```python
+author = models.ForeignKey(Author, on_delete=models.PROTECT)
+```
+
+### 🔹 3️⃣ SET_NULL
+* Parent delete → child FK field NULL set ho jayegi
+```python
+author = models.ForeignKey(
+    Author,
+    null=True,
+    on_delete=models.SET_NULL
+)
+```
+
+### 🔹 4️⃣ SET_DEFAULT
+* Parent delete → FK field default value se set ho jayegi
+```python
+author = models.ForeignKey(
+    Author,
+    default=1,
+    on_delete=models.SET_DEFAULT
+)
+```
+
+### 🔹 6️⃣ DO_NOTHING
+* Parent delete → Django kuch nahi karega
+```python
+author = models.ForeignKey(Author, on_delete=models.DO_NOTHING)
 ```
 
 # 🧩 Django Views (Business Logic / Presentation Layer)
@@ -400,7 +443,9 @@ Model (Data Access)
 Template (HTML Render)
       ↓
 Response (Back to Client)
+
 **Explanation:**  
+
 1. **Browser (Client):** User browser se HTTP request send karta hai  
 2. **URLConf (urls.py):** URL pattern match karke request ko appropriate view ke paas forward karta hai  
 3. **View (Function/Class):** Request process karta hai aur data fetch/logic execute karta hai  
@@ -410,95 +455,6 @@ Response (Back to Client)
 
 **Short Interview Line:**  
 > “Django me request browser se aati hai, urls.py me route hoti hai, view process karta hai, model se data fetch hota hai, template me render hota hai aur final response user ko return hota hai.”
-
-
-# 🔄 Django Backend → Frontend Data Flow
-
----
-
-## 1. **Backend (Models + Views)**
-
-### Step 1: Model me data store karna
-- Data database me **Models** ke through store hota hai.
-```python
-from django.db import models
-
-class Product(models.Model):
-    name = models.CharField(max_length=100)
-    price = models.FloatField()
-
-
-### Step 2: View me data fetch karna
-* View Model se data fetch karta hai aur template ko pass karta hai.
-
-from django.shortcuts import render
-from .models import Product
-
-def product_list(request):
-    products = Product.objects.all()  # ORM query
-    return render(request, 'products.html', {'products': products})
-
-
-### step 3: Frontend (Templates)
-* Templates me context data (dictionary) ko render karte hain using {{ variable_name }}.
-* Template tags se loops aur conditions bhi handle hote hain.
-
-<h1>Product List</h1>
-<ul>
-{% for product in products %}
-    <li>{{ product.name }} - ₹{{ product.price|floatformat:2 }}</li>
-{% empty %}
-    <li>No products available</li>
-{% endfor %}
-</ul>
-
-##### Explanation:
-
-    * products → View se aaya hua queryset
-    * {% for product in products %} → loop for each product
-    * {{ product.name }} aur {{ product.price }} → data render karna
-
-### **Backend → Frontend Flow Diagram**
-
-Database (Model)
-      ↓
-View (Fetch + Process)
-      ↓
-Context Dictionary
-      ↓
-Template (Render HTML)
-      ↓
-User Browser (Frontend)
-# 🧩 Django Context Data → Frontend UI
-
----
-
-## 1. **Backend: Context Data Pass Karna**
-
-- Views me **Python dictionary** create kar ke template ko pass karte hain.  
-- Ye **server-side rendering** ka method hai.
-
-```python
-from django.shortcuts import render
-from .models import Product
-
-def product_list(request):
-    products = Product.objects.all()  # Queryset
-    context = {'products': products}  # Context dictionary
-    return render(request, 'products.html', context)
-
-
-## Template
-
-```html
-<h1>Product List</h1>
-<ul>
-{% for product in products %}
-    <li>{{ product.name }} - ₹{{ product.price|floatformat:2 }}</li>
-{% empty %}
-    <li>No products available</li>
-{% endfor %}
-</ul>
 
 # 🧩 Django Model (Data Layer)
 
@@ -562,6 +518,7 @@ class Product(models.Model):
 
 * ForeignKey → One-to-Many relationship (Many products → One category)
 * on_delete=models.CASCADE → Category delete hone par related products bhi delete ho jaayenge
+```
 
 ### 5. **Model Inheritance**
 
@@ -576,6 +533,8 @@ class Product(models.Model):
 
 - Base class sirf **fields aur methods provide karti hai**, table create nahi hota.  
 - Child class apne liye separate table create karti hai aur base class ke fields inherit karti hai.
+- ऐसा model जो database में अपनी table नहीं बनाता, बल्कि दूसरे models के लिए base class की तरह इस्तेमाल होता है।
+- यहाँ BaseModel की अलग table नहीं बनेगी।
 
 **Example:**
 ```python
@@ -619,14 +578,13 @@ class ProductProxy(Product):
         proxy = True
         ordering = ['name']
 
-
+```
 | Type                        | Table          | Use Case                   |
 | --------------------------- | -------------- | -------------------------- |
 | **Abstract Base Class**     | ❌ Parent table | Common fields reuse        |
 | **Multi-Table Inheritance** | ✔ Both tables  | Parent-child data required |
 | **Proxy Model**             | ❌ New table    | Only behavior change       |
 
-```
 
 # 🔔 Django Signals
 
@@ -652,6 +610,7 @@ from .models import Product
 def after_product_save(sender, instance, **kwargs):
     print(f"Product saved: {instance.name}")
 ```
+
 ## 🔥 Most Important Built-in Signals
 
 | Signal Name        | Event                                 |
@@ -693,8 +652,6 @@ class UsersConfig(AppConfig):
 ```
 
 # 🧩 Django Jinja Templates
-
----
 
 ## 1. **Jinja Template kya hai?**
 
@@ -745,8 +702,6 @@ def product_list(request):
 
 # 🧩 Django Migrations
 
----
-
 ## 1. **Migration kya hai?**
 
 **Definition:**  
@@ -796,7 +751,6 @@ from django.db import models
 class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField()
-
 ```
 
 # 🧩 Django Shell
@@ -847,8 +801,8 @@ class Product(models.Model):
 
 ```bash
 python manage.py shell
-
 ```
+
 ```python
 # Models Import Karna
 from myapp.models import Product
@@ -861,6 +815,7 @@ product = Product.objects.create(
     is_active=True
 )
 ```
+- `create()` Manager method है जो object create करके तुरंत database में save कर देता है। or `save()` पहले object बनाते हैं, फिर manually save करते हैं।
 
 ### Another Method: Object Initialization + save()
 
@@ -873,7 +828,8 @@ product = Product(
 )
 product.save()
 ```
-# Bulk Create
+
+### Bulk Create
 ```python
 products = [
     Product(name="Tablet", price=15000, stock=30),
@@ -882,48 +838,47 @@ products = [
 Product.objects.bulk_create(products)
 ```
 
-# Get All data.
+### Get All data.
 ```python
 Product.objects.all()
 ```
-# Get single data
+
+### Get single data
 ```python
 Product.objects.all()[1]
 ```
-# Get single data and fildes name
+
+### Get single data and fields name
 ```python
 Product.objects.all()[1].name
 Product.objects.all()[1].price
 Product.objects.all()[0].stock
-
+```
 
 # 🧩 Django Shell: Function Call Karna
-
----
 
 ## 1. **Step 1: Shell Open Karna**
 
 ```bash
+
+# models.py
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+
+    def say_hello(self):
+        print(f"Hello, I am {self.name}")
+
+
 python manage.py shell
-
-
+```
 
 ```python
-from myapp.models import Product
+from myapp.models import Student
 
-# Model Method
+student = Student.objects.get(id=1)
+student.say_hello()
 
-product = Product.objects.first()  # First product fetch
-discounted_price = product.get_discounted_price()
-print(discounted_price)
-
-#===============================================================
-
-# Run function using sheel
-
-from myApp.views import *
-
-myfunname();
+Hello, I am Rahul ==>> Output
 ```
 
 # 🧩 Django Shell: CRUD Operations
@@ -940,12 +895,12 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
-
+```
 
 
 ### **1️⃣ Create (Data Insert)**
 
-# Method 1: create() method
+#### Method 1: create() method
 ```python
 from myapp.models import Product
 
@@ -956,7 +911,7 @@ product1 = Product.objects.create(
     is_active=True
 )
 ```
-# Method 2: Object Initialization + save()
+#### Method 2: Object Initialization + save()
 ```python
 product2 = Product(
     name="Mobile",
@@ -967,7 +922,7 @@ product2 = Product(
 product2.save()
 ```
 
-# Bulk Create
+#### Bulk Create
 
 ```python
 products = [
@@ -975,7 +930,7 @@ products = [
     Product(name="Monitor", price=10000, stock=20),
 ]
 Product.objects.bulk_create(products)
-
+```
 
 ### **2️⃣ Read (Data Fetch / Query)**
 
@@ -1033,8 +988,6 @@ Product.objects.all()  # Shows remaining active products
 
 # 🧩 Django ORM (Object-Relational Mapping)
 
----
-
 ## 1. **ORM kya hai?**
 
 **Definition:**  
@@ -1087,8 +1040,6 @@ class Product(models.Model):
     price = models.FloatField()
     stock = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
-
-
 
 ```python
 ## filter()
@@ -1146,12 +1097,9 @@ unique_prices = Product.objects.values('price').distinct()
 ## raw()
 products = Product.objects.raw('SELECT * FROM myapp_product WHERE price > %s', [20000])
 
-
 ```
 
 # 🧩 Django ORM: Aggregate Functions
-
----
 
 ## 1️⃣ **Aggregate Function kya hai?**
 
@@ -1214,6 +1162,95 @@ summary = Product.objects.aggregate(
 )
 print(summary)
 # {'total_stock': 110, 'avg_price': 25000.0, 'max_price': 50000}
+```
+
+# SQL Injection
+SQL Injection ek aisi vulnerability (kamzori) hai jahan ek hacker hamari website ke input fields (jaise login form, search bar, ya URL parameters) ke andar galat ya malicious SQL queries inject (daal) deta hai."
+
+Agar website ka code secure nahi hai, toh database un malicious inputs ko user ka data samajhne ke bajaye ek SQL command ki tarah run kar deta hai. Isse hacker aapke database ka control le sakta hai, bina kisi password ke login kar sakta hai, ya fir poora ka poora data delete kar sakta hai.
+
+### SQL Injection Se Kya Nuksan Ho Sakta Hai?
+
+- बाईपास ऑथेंटिकेशन (Bypass Authentication): Kisi bhi user ya admin ke account mein bina password ke ghusna.
+- डाटा लीक (Data Theft): Database se sensitive data jaise Credit Card numbers, Passwords, aur Emails nikalna (jaise UNION attack ka use karke).
+- डाटा डिलीट होना (Data Destruction): Hacker input mein ; DROP TABLE users; -- daal kar aapki poori table uda sakta hai.
+
+### Isse Django Aur Hamari Application Ko Kaise Bachayein?
+
+#### A. Django ORM Ka Use Karein (In-built Protection)
+Django ka ORM (Object-Relational Mapping) default roop se SQL Injection se poori tarah surakshit hai. Jab aap Django ORM use karte hain, toh wo Parameterized Queries ka use karta hai.
+```sql
+# Completely Secure ✅ (Django ORM)
+user = User.objects.filter(username=username, password=password)
+```
+ORM user ke input ko kabhi bhi direct query string mein nahi jodta. Agar hacker admin' -- daalega bhi, toh Django database se ek aisa user dhoodega jiska naam hi admin' -- ho, na ki use command ki tarah chalayega.
+
+#### B. Raw SQL Mein Parametrization Use Karein (Agar zaroorat pade)
+Agar aapko kabhi kisi wajah se Django mein raw SQL chalani hi pade, toh kabhi bhi Python ka f-string ya %s formatting use mat karein. Hamesha parameters ko alag list mein pass karein:
+
+#### summery:-
+SQL Injection ek aisi security kamzori hai jahan hacker input fields ke throw malicious SQL commands database mein execute karwa deta hai. Isse bachne ka sabse behtareen tarika Parameterized Queries aur Django ORM ka use karna hai, kyunki yeh user input ko code se alag rakhta hai aur database use kabhi ek command ki tarah run nahi karta.
+
+# Django vs FastAPI: The Core Difference Table
 
 
+| Feature / Criteria | Django | FastAPI |
+| :--- | :--- | :--- |
+| **Framework Type** | **Full-Stack / Batteries-Included**: Isme built-in Admin Panel, ORM, Auth, aur Forms sab pehle se milta hai. | **Micro-Framework / Minimal**: Yeh sirf APIs ke liye bana hai. Baaki cheezein (ORM, Auth) bahar se install karni padti hain. |
+| **Architecture** | Mukhyatah **Synchronous (WSGI)** hai, lekin ab isme ASGI aur Async support bhi add ho gaya hai. | Poori tarah se **Asynchronous (ASGI)** hai, jo Python ke `async/await` par buniyaad se hi chalta hai. |
+| **Performance / Speed**| Medium. Heavy framework aur itne saare built-in features hone ke kaaran iska response time thoda zyada hota hai. | **Ultra-Fast 🚀**. Yeh NodeJS aur GoLang ke barabar ki speed deta hai kyunki yeh Starlette aur Pydantic par chalta hai. |
+| **Primary Use-Case** | Badi monolithic websites, E-commerce platforms, ya dashboards jahan database aur admin panel ki turant zaroorat ho. | **Microservices**, Machine Learning/AI model deployment, aur heavy real-time dynamic APIs jahan speed sabse zaroori ho. |
+| **Database (ORM)** | In-built **Django ORM** milta hai jo bohot powerful, secure aur scalable hai. | Koi in-built ORM nahi hota. Aapko **SQLAlchemy** ya **Tortoise ORM** alag se integrate karna padta hai. |
+| **Data Validation** | Django Forms aur Serializers (DRF) ka use karke custom validation karni padti hai. | Python ke **Pydantic** library ka use karta hai, jo type-hinting ke basis par automatic data validation bohot fast karti hai. |
+| **API Documentation** | Agar Django REST Framework (DRF) use kar rahe hain toh alag se third-party packages (jaise Swagger UI) set karne padte hain. | **Automatic Interactive Docs (Swagger UI & ReDoc)** milta hai (`/docs` URL par bina kisi extra code ke). |
+| **Learning Curve** | Thoda mushkil hai kyunki iska apna ek poora bada ecosystem (views, models, admin settings) seekhna padta hai. | **Bohot aasan hai**. Agar aapko normal Python aati hai, toh aap 10 line ke code mein apni pehli production-ready API bana sakte hain. |
+
+### Interviewer Ka Cross-Question: "Main naye project ke liye kise chunoon?"
+
+- Django tab chunna chahiye jab humein ek bada application banana ho jahan humein pehle din se User Authentication, Permissions, Database Migrations, aur ek ready-to-use Admin Panel chahiye ho. Isse development time bohot bach jata hai.
+
+- FastAPI tab chunna chahiye jab hamara main focus sirf data-driven REST APIs banana ho (jaise kisi React/NextJS ya Mobile app ke liye backend), Data Science ya Machine Learning models ko deploy karna ho, ya fir microservices architecture par kaam karna ho jahan har ek millisecond ki performance maayne rakhti hai."
+
+# N+1 Problem Kya Hoti Hai?
+
+N+1 problem tab hoti hai jab hamara ORM database se data nikaalne ke liye galti se bohot saari faltu SQL queries chala deta hai. Maan lijiye humein 100 books aur unke authors ke naam screen par dikhane hain. Ek sahi query chalne ke badle (1 query), Django ORM pehle saari books nikaalega (1 query) aur phir har ek book ke author ka naam nikaalne ke liye alag se 100 queries chalayega (N queries). Is tarah total $1 + 100 = 101$ queries chal jati hain, jise hum N+1 Problem kehte hain.
+```python
+from django.db import models
+
+class Author(models.Model):
+    name = models.CharField(max_length=100)
+
+class Blog(models.Model):
+    title = models.CharField(max_length=200)
+    # Har blog ka ek author hoga (ForeignKey)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+
+
+# Sabhi blogs ko fetch karne ke liye 1 Main Query chali
+blogs = Blog.objects.all() 
+
+for blog in blogs:
+    # Yahan har baar naye author ke liye +1 extra query chalegi!
+    print(f"Blog Title: {blog.title} | Author: {blog.author.name}")
+    
+```
+
+### Isko Fix Kaise Karein? (The Solution)
+
+#### 1. SQL ke tareeqe se (JOIN Use karke)
+Alag-alag queries chalane ke bajaye, hum SQL me JOIN ka use karke ek hi query me saara data nikal sakte hain:
+```sql
+SELECT blogs.*, authors.name 
+FROM blogs 
+LEFT JOIN authors ON blogs.author_id = authors.id;
+```
+#### 2. ORMs ke tareeqe se
+Har framework me Eager Loading ke liye keywords hote hain. Jaise:
+- Django (Python): select_related() ya prefetch_related()
+```python
+# Galat (N+1):
+blogs = Blog.objects.all()
+
+# Sahi (Eager Loading):
+blogs = Blog.objects.select_related('author').all()
 ```
